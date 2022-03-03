@@ -83,15 +83,15 @@ DEPS=$(patsubst %,$(DEPDIR)/%.d,$(SRCS))
 
 CC=            gcc
 CCFLAGS=      -g -O0 #-W -fPIC
-CCLIBS=	      #-lm
+CCLIBS=	      -lm -lmpfr -lgmp
 
-CXX=           g++
-CXXFLAGS=     -g -O0 #-W -PIC
-CXXLIBS=      #-lm
+#CXX=           g++
+#CXXFLAGS=     -g -O0 #-W -PIC
+#CXXLIBS=      #-lm
 
-FC=            gfortran
-FFLAGS=       -g -O3 -std=legacy #-Wall -Wextra -Wconversion
-FFLIBS=
+#FC=            gfortran
+#FFLAGS=       -g -O3 -std=legacy #-Wall -Wextra -Wconversion
+#FFLIBS=
 
 CPPFLAGS+=    -cpp -MMD -MP -MF $(DEPDIR)/$*.Td
 LDFLAGS=
