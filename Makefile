@@ -86,8 +86,8 @@ CCFLAGS=      -g -O0 -I/opt/homebrew/include #-W -fPIC
 CCLIBS=	      -lm -lmpfr -lgmp -L/opt/homebrew/lib
 
 #CXX=           g++
-#CXXFLAGS=     -g -O0 #-W -PIC
-#CXXLIBS=      #-lm
+#CXXFLAGS=     -g -O0 #-I/opt/homebrew/include #-W -PIC
+#CXXLIBS=      -L/opt/homebrew/lib #-lm
 
 #FC=            gfortran
 #FFLAGS=       -g -O3 -std=legacy #-Wall -Wextra -Wconversion
