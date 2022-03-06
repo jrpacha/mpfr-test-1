@@ -8,7 +8,6 @@
 #
 # So all the credits go to these guys!!!
 #
-#
 # Use:
 # Create a folder to hold your project, for example
 # 	~$ mkdir my_project
@@ -29,45 +28,46 @@
 # -- To remove .o .d and exec files
 # 	~/my_project mrproper
 
-PROG=$(notdir $(CURDIR))#name of the project
+PROG=$(notdir $(CURDIR)) #name of the project
 SRCDIR=       src
 HDIR =        include
 OBJDIR=       .o
 DEPDIR=       .d
 
-ifdef OS
-    $(shell mkdir $(OBJDIR) 2>NUL:)
-    $(shell mkdir $(DEPDIR) 2>NUL:)
-    PROG:=$(PROG).exe
-    MV = move
-    POSTCOMPILE = $(MV) $(DEPDIR)\$*.Td $(DEPDIR)\$*.d 2>NUL
-    RMFILES = del /Q /F $(OBJDIR)\*.o $(DEPDIR)\*.d 2>NUL
-    RMDIR = rd $(OBJDIR) $(DEPDIR) 2>NUL
-    RUN=$(PROG)
-    RMEXE= del /Q /F $(PROG) 2>NUL
-    USE=Use:
-    USE.HELP='make help', to see other options.
-    USE.BUILD='make', to build the executable, $(PROG).
-    USE.CLEAN='make clean', to delete the object and dep files.
-    USE.MRPROPER='make mrproper', to delete the executable as well.
-    ECHO=@echo.
-else 
-    ifeq ($(shell uname), Linux)
-        $(shell mkdir -p $(OBJDIR) >/dev/null)
-        $(shell mkdir -p $(DEPDIR) >/dev/null)
-        MV = mv -f
-        POSTCOMPILE = $(MV) $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
-        RMFILES = $(RM) $(OBJDIR)/*.o $(DEPDIR)/*.d
-        RMDIR = rmdir $(OBJDIR) $(DEPDIR)
-        RUN= ./$(PROG)
-        RMEXE = rm -f $(PROG)
-        USE="Use:"
-        USE.HELP="      'make help', to see other options."
-        USE.BUILD="     'make', to build the executable, $(PROG)."
-        USE.CLEAN="     'make clean', to delete the object and dep files."
-        USE.MRPROPER="     'make mrproper', to delete the executable as well."
-        ECHO=@echo
-    endif
+ifeq ($(OS), Widows_NT) # Windows detected
+	detected_OS := Windows
+	$(shell mkdir $(OBJDIR) 2>NUL:)
+  $(shell mkdir $(DEPDIR) 2>NUL:)
+  PROG:=$(PROG).exe
+  MV = move
+  POSTCOMPILE = $(MV) $(DEPDIR)\$*.Td $(DEPDIR)\$*.d 2>NUL
+  RMFILES = del /Q /F $(OBJDIR)\*.o $(DEPDIR)\*.d 2>NUL
+  RMDIR = rd $(OBJDIR) $(DEPDIR) 2>NUL
+  RUN=$(PROG)
+  RMEXE= del /Q /F $(PROG) 2>NUL
+  USE=Use:
+  USE.HELP='make help', to see other options.
+  USE.BUILD='make', to build the executable, $(PROG).
+  USE.CLEAN='make clean', to delete the object and dep files.
+  USE.MRPROPER='make mrproper', to delete the executable as well.
+  ECHO=@echo.
+	$(ECHO) "Detected OS: " $(detected_OS)
+else
+	 detected_OS := $(shell uname)
+   $(shell mkdir -p $(OBJDIR) >/dev/null)
+   $(shell mkdir -p $(DEPDIR) >/dev/null)
+   MV = mv -f
+   POSTCOMPILE = $(MV) $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
+   RMFILES = $(RM) $(OBJDIR)/*.o $(DEPDIR)/*.d
+   RMDIR = rmdir $(OBJDIR) $(DEPDIR)
+   RUN= ./$(PROG)
+   RMEXE = rm -f $(PROG)
+   USE="Use:"
+   USE.HELP="      'make help', to see other options."
+   USE.BUILD="     'make', to build the executable, $(PROG)."
+   USE.CLEAN="     'make clean', to delete the object and dep files."
+   USE.MRPROPER="     'make mrproper', to delete the executable as well."
+   ECHO=@echo
 endif
 
 SRCS_ALL=$(wildcard $(SRCDIR)/*.c)
@@ -81,9 +81,9 @@ SRCS+=$(filter-out %_flymake.f, $(notdir $(basename $(SRCS_ALL))))
 OBJS=$(patsubst %,$(OBJDIR)/%.o,$(SRCS))
 DEPS=$(patsubst %,$(DEPDIR)/%.d,$(SRCS))
 
-CC=            gcc
-CCFLAGS=      -g -O0 #-W -fPIC
-CCLIBS=	      -lm -lmpfr -lgmp
+CC=           gcc
+CCFLAGS=      -g -O0 -I/opt/homebrew/include #-W -fPIC
+CCLIBS=	      -lm -lmpfr -lgmp -L/opt/homebrew/lib
 
 #CXX=           g++
 #CXXFLAGS=     -g -O0 #-W -PIC
@@ -93,13 +93,14 @@ CCLIBS=	      -lm -lmpfr -lgmp
 #FFLAGS=       -g -O3 -std=legacy #-Wall -Wextra -Wconversion
 #FFLIBS=
 
-CPPFLAGS+=    -cpp -MMD -MP -MF $(DEPDIR)/$*.Td
+CPPFLAGS+=     -cpp -MMD -MP -MF $(DEPDIR)/$*.Td
 LDFLAGS=
 
 # Note: -std=legacy.  We use std=legacy to compile fortran 77
+#
 
 $(PROG): $(OBJS)
-	$(CXX) -o$@ $^ $(LDFLAGS) $(CXXLIBS) $(CCLIBS) $(FFLIBS)
+	$(CC) -o$@ $^ $(LDFLAGS) $(CXXLIBS) $(CCLIBS) $(FFLIBS)
 	$(ECHO)
 	$(ECHO) $(USE)
 	$(ECHO)      $(USE.HELP)
@@ -131,16 +132,17 @@ mrproper: clean
 	$(RMEXE)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(DEPDIR)/%.d
+	$(ECHO) "Detected OS: " $(detected_OS)
 	$(CC) $(CCFLAGS) $(CPPFLAGS) -I$(HDIR) -c $< -o$@
 	$(POSTCOMPILE)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cc $(DEPDIR)/%.d
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -I$(HDIR) -c $< -o$@
-	$(POSTCOMPILE)
-
-$(OBJDIR)/%.o: $(SRCDIR)/%.f $(DEPDIR)/%.d
-	$(FC) $(FFLAGS) $(CPPFLAGS) -I$(HDIR) -c $< -o$@
-	$(POSTCOMPILE)
+#$(OBJDIR)/%.o: $(SRCDIR)/%.cc $(DEPDIR)/%.d
+#	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -I$(HDIR) -c $< -o$@
+#	$(POSTCOMPILE)
+#
+#$(OBJDIR)/%.o: $(SRCDIR)/%.f $(DEPDIR)/%.d
+#	$(FC) $(FFLAGS) $(CPPFLAGS) -I$(HDIR) -c $< -o$@
+#	$(POSTCOMPILE)
 
 $(DEPDIR)/%.d:;
 .PRECIOUS: $(DEPDIR)
