@@ -36,12 +36,13 @@ DEPDIR=       .d
 
 ifeq ($(OS), Widows_NT) # Windows detected
 	detected_OS := Windows
+	WHICHOS := _detected_os
 	$(shell mkdir $(OBJDIR) 2>NUL:)
   $(shell mkdir $(DEPDIR) 2>NUL:)
   PROG:=$(PROG).exe
   MV = move
   POSTCOMPILE = $(MV) $(DEPDIR)\$*.Td $(DEPDIR)\$*.d 2>NUL
-  RMFILES = del /Q /F $(OBJDIR)\*.o $(DEPDIR)\*.d 2>NUL
+  RMFILES = del /Q /F $(WHICHOS) $(OBJDIR)\*.o $(DEPDIR)\*.d  2>NUL
   RMDIR = rd $(OBJDIR) $(DEPDIR) 2>NUL
   RUN=$(PROG)
   RMEXE= del /Q /F $(PROG) 2>NUL
@@ -51,14 +52,14 @@ ifeq ($(OS), Widows_NT) # Windows detected
   USE.CLEAN='make clean', to delete the object and dep files.
   USE.MRPROPER='make mrproper', to delete the executable as well.
   ECHO=@echo.
-	$(ECHO) "Detected OS: " $(detected_OS)
 else
 	 detected_OS := $(shell uname)
+	 WHICHOS := .detected_os
    $(shell mkdir -p $(OBJDIR) >/dev/null)
    $(shell mkdir -p $(DEPDIR) >/dev/null)
    MV = mv -f
    POSTCOMPILE = $(MV) $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
-   RMFILES = $(RM) $(OBJDIR)/*.o $(DEPDIR)/*.d
+   RMFILES = $(RM) $(WHICHOS) $(OBJDIR)/*.o $(DEPDIR)/*.d 
    RMDIR = rmdir $(OBJDIR) $(DEPDIR)
    RUN= ./$(PROG)
    RMEXE = rm -f $(PROG)
@@ -83,7 +84,7 @@ DEPS=$(patsubst %,$(DEPDIR)/%.d,$(SRCS))
 
 CC=           gcc
 CCFLAGS=      -g -O0 -I/opt/homebrew/include #-W -fPIC
-CCLIBS=	      -lm -lmpfr -lgmp -L/opt/homebrew/lib
+CCLIBS=	      -lm -lgmp -lmpfr -s -L/opt/homebrew/lib
 
 #CXX=           g++
 #CXXFLAGS=     -g -O0 #-I/opt/homebrew/include #-W -PIC
@@ -98,6 +99,12 @@ LDFLAGS=
 
 # Note: -std=legacy.  We use std=legacy to compile fortran 77
 #
+
+all: $(WHICHOS) $(PROG)
+
+$(WHICHOS): 
+	$(ECHO) "Detected OS: " $(detected_OS) > $(WHICHOS)
+	@cat $(WHICHOS)
 
 $(PROG): $(OBJS)
 	$(CC) -o$@ $^ $(LDFLAGS) $(CXXLIBS) $(CCLIBS) $(FFLIBS)
@@ -132,7 +139,6 @@ mrproper: clean
 	$(RMEXE)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(DEPDIR)/%.d
-	$(ECHO) "Detected OS: " $(detected_OS)
 	$(CC) $(CCFLAGS) $(CPPFLAGS) -I$(HDIR) -c $< -o$@
 	$(POSTCOMPILE)
 
